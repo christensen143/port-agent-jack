@@ -66,6 +66,19 @@ class WebhookInvoker(BaseInvoker):
     def _prepare_payload(
         self, mapping: Mapping, body: dict, invocation_method: dict
     ) -> RequestPayload:
+        # Check if Port has already processed the webhook body
+        if "body" in invocation_method and "headers" in invocation_method:
+            # Port has already processed the webhook, use the provided values directly
+            request_payload: RequestPayload = RequestPayload(
+                method=invocation_method.get("method", consts.DEFAULT_HTTP_METHOD),
+                url=invocation_method.get("url", ""),
+                body=invocation_method.get("body", {}),
+                headers=invocation_method.get("headers", {}),
+                query=invocation_method.get("query", {}),
+            )
+            return request_payload
+
+        # Legacy behavior: apply JQ transformations
         request_payload: RequestPayload = RequestPayload(
             method=invocation_method.get("method", consts.DEFAULT_HTTP_METHOD),
             url=invocation_method.get("url", ""),
