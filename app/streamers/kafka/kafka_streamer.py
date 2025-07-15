@@ -33,10 +33,18 @@ class KafkaStreamer(BaseStreamer):
 
         # Check environment filtering if configured
         if settings.AGENT_ENVIRONMENTS:
-            msg_environments = invocation_method.get("environment", [])
-            # Handle both string and list formats
-            if isinstance(msg_environments, str):
-                msg_environments = [msg_environments]
+            # Try to extract environment from invocation method body
+            msg_environments = []
+
+            # Check if body exists and has environment field
+            body = invocation_method.get("body", {})
+            if isinstance(body, dict) and "environment" in body:
+                # Extract environment from body (already evaluated by Port)
+                env_value = body.get("environment", "")
+                if isinstance(env_value, str) and env_value:
+                    msg_environments = [env_value]
+                elif isinstance(env_value, list):
+                    msg_environments = env_value
 
             # Skip if no environment specified in message
             if not msg_environments:

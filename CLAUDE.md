@@ -75,17 +75,22 @@ To deploy multiple agents for different environments using the same Port organiz
    - Staging agent: `AGENT_ENVIRONMENTS=staging`
    - Dev agent: `AGENT_ENVIRONMENTS=dev,test,sandbox`
 
-3. In Port, include the environment field in your self-service action invocation methods:
+3. In Port, configure your self-service action to include the environment in the webhook body:
    ```json
    {
      "invocationMethod": {
        "type": "WEBHOOK",
        "agent": true,
-       "environment": "production",
-       "url": "https://your-webhook-url"
+       "url": "https://your-webhook-url",
+       "body": {
+         "environment": "production",
+         "...": "other fields using JQ expressions"
+       }
      }
    }
    ```
+   
+   Note: Port uses JQ expressions in the body field. The agent will extract the evaluated environment value from the body after Port processes the JQ expressions.
 
 Messages without an environment field will be skipped by agents with `AGENT_ENVIRONMENTS` configured.
 
@@ -110,18 +115,23 @@ Tests are organized to mirror the application structure:
 
 2. HMAC signature verified using organization ID as key
 
-3. Message transformed based on invocation method:
+3. Environment filtering applied (if AGENT_ENVIRONMENTS is configured):
+   - Agent extracts environment from invocationMethod.body.environment
+   - Messages without matching environment are skipped
+   - Messages without environment field are skipped when filter is active
+
+4. Message transformed based on invocation method:
    - GitLab: Uses control_the_payload_config.json rules
    - Generic webhook: Direct payload forwarding
    - Request headers and body customizable via JQ transformations
 
-4. Webhook executed with:
+5. Webhook executed with:
    - Configurable HTTP method
    - Custom headers (including Port-Agent-Signature)
    - Transformed body
    - SSL verification options
 
-5. Results reported back to Port via runs API
+6. Results reported back to Port via runs API
 
 ## Common Development Tasks
 

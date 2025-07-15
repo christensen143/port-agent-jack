@@ -99,7 +99,7 @@ def test_single_stream_skipped_due_to_agentless(
     [
         (
             "mock_webhook_run_message",
-            {"environment": "production"},
+            {"body": {"environment": "production"}},
             settings.KAFKA_RUNS_TOPIC,
         ),
     ],
@@ -212,7 +212,7 @@ def test_stream_skipped_due_to_missing_environment(
     [
         (
             "mock_webhook_run_message",
-            {"environment": ["production", "staging"]},
+            {"body": {"environment": ["production", "staging"]}},
             settings.KAFKA_RUNS_TOPIC,
         ),
     ],
@@ -239,7 +239,7 @@ def test_stream_with_multiple_environments(
     [
         (
             "mock_webhook_run_message",
-            {"environment": "production"},
+            {"body": {"environment": "production"}},
             settings.KAFKA_RUNS_TOPIC,
         ),
     ],
