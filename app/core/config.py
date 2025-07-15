@@ -86,7 +86,7 @@ class Settings(BaseSettings):
         case_sensitive = True
         env_file = find_dotenv()
         env_file_encoding = "utf-8"
-        
+
         @classmethod
         def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
             # Handle AGENT_ENVIRONMENTS as a plain string, not JSON
