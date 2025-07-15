@@ -37,7 +37,7 @@ class KafkaStreamer(BaseStreamer):
             # Handle both string and list formats
             if isinstance(msg_environments, str):
                 msg_environments = [msg_environments]
-            
+
             # Skip if no environment specified in message
             if not msg_environments:
                 logger.info(
@@ -49,7 +49,7 @@ class KafkaStreamer(BaseStreamer):
                     msg.offset(),
                 )
                 return
-            
+
             # Skip if message environment doesn't match agent's allowed environments
             if not any(env in settings.AGENT_ENVIRONMENTS for env in msg_environments):
                 logger.info(

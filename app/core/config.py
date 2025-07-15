@@ -68,7 +68,7 @@ class Settings(BaseSettings):
     AGENT_ENVIRONMENTS: list[str] = Field(default_factory=list)
 
     @validator("AGENT_ENVIRONMENTS", pre=True)
-    def parse_environments(cls, v):
+    def parse_environments(cls, v: Any) -> list[str]:
         if isinstance(v, str):
             return [e.strip() for e in v.split(",") if e.strip()]
         return v or []

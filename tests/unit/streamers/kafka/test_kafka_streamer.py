@@ -97,7 +97,11 @@ def test_single_stream_skipped_due_to_agentless(
 @pytest.mark.parametrize(
     "mock_kafka",
     [
-        ("mock_webhook_run_message", {"environment": "production"}, settings.KAFKA_RUNS_TOPIC),
+        (
+            "mock_webhook_run_message",
+            {"environment": "production"},
+            settings.KAFKA_RUNS_TOPIC,
+        ),
     ],
     indirect=True,
 )
@@ -106,20 +110,24 @@ def test_stream_with_matching_environment(
     mock_requests: None, mock_kafka: None, mock_timestamp: None
 ) -> None:
     Timer(0.01, terminate_consumer).start()
-    
+
     # Set agent environments to include production
     with mock.patch.object(settings, "AGENT_ENVIRONMENTS", ["production", "staging"]):
         with mock.patch.object(consumer_logger, "error") as mock_error:
             streamer = KafkaStreamer(Consumer())
             streamer.stream()
-            
+
             mock_error.assert_not_called()
 
 
 @pytest.mark.parametrize(
     "mock_kafka",
     [
-        ("mock_webhook_run_message", {"environment": "development"}, settings.KAFKA_RUNS_TOPIC),
+        (
+            "mock_webhook_run_message",
+            {"environment": "development"},
+            settings.KAFKA_RUNS_TOPIC,
+        ),
     ],
     indirect=True,
 )
@@ -128,17 +136,17 @@ def test_stream_skipped_due_to_non_matching_environment(
     mock_kafka: None, mock_timestamp: None
 ) -> None:
     Timer(0.01, terminate_consumer).start()
-    
+
     # Set agent environments to production only
     with mock.patch.object(settings, "AGENT_ENVIRONMENTS", ["production"]):
-        with mock.patch.object(consumer_logger, "error") as mock_error, mock.patch.object(
-            streamer_logger, "info"
-        ) as mock_info:
+        with mock.patch.object(
+            consumer_logger, "error"
+        ) as mock_error, mock.patch.object(streamer_logger, "info") as mock_info:
             streamer = KafkaStreamer(Consumer())
             streamer.stream()
-            
+
             mock_error.assert_not_called()
-            
+
             mock_info.assert_has_calls(
                 [
                     call(ANY, ANY),
@@ -159,7 +167,11 @@ def test_stream_skipped_due_to_non_matching_environment(
 @pytest.mark.parametrize(
     "mock_kafka",
     [
-        ("mock_webhook_run_message", {}, settings.KAFKA_RUNS_TOPIC),  # No environment field
+        (
+            "mock_webhook_run_message",
+            {},
+            settings.KAFKA_RUNS_TOPIC,
+        ),  # No environment field
     ],
     indirect=True,
 )
@@ -168,17 +180,17 @@ def test_stream_skipped_due_to_missing_environment(
     mock_kafka: None, mock_timestamp: None
 ) -> None:
     Timer(0.01, terminate_consumer).start()
-    
+
     # Set agent environments filter
     with mock.patch.object(settings, "AGENT_ENVIRONMENTS", ["production"]):
-        with mock.patch.object(consumer_logger, "error") as mock_error, mock.patch.object(
-            streamer_logger, "info"
-        ) as mock_info:
+        with mock.patch.object(
+            consumer_logger, "error"
+        ) as mock_error, mock.patch.object(streamer_logger, "info") as mock_info:
             streamer = KafkaStreamer(Consumer())
             streamer.stream()
-            
+
             mock_error.assert_not_called()
-            
+
             mock_info.assert_has_calls(
                 [
                     call(ANY, ANY),
@@ -198,7 +210,11 @@ def test_stream_skipped_due_to_missing_environment(
 @pytest.mark.parametrize(
     "mock_kafka",
     [
-        ("mock_webhook_run_message", {"environment": ["production", "staging"]}, settings.KAFKA_RUNS_TOPIC),
+        (
+            "mock_webhook_run_message",
+            {"environment": ["production", "staging"]},
+            settings.KAFKA_RUNS_TOPIC,
+        ),
     ],
     indirect=True,
 )
@@ -207,13 +223,13 @@ def test_stream_with_multiple_environments(
     mock_requests: None, mock_kafka: None, mock_timestamp: None
 ) -> None:
     Timer(0.01, terminate_consumer).start()
-    
+
     # Set agent environments to match one of the message environments
     with mock.patch.object(settings, "AGENT_ENVIRONMENTS", ["staging"]):
         with mock.patch.object(consumer_logger, "error") as mock_error:
             streamer = KafkaStreamer(Consumer())
             streamer.stream()
-            
+
             mock_error.assert_not_called()
 
 
@@ -221,7 +237,11 @@ def test_stream_with_multiple_environments(
 @pytest.mark.parametrize(
     "mock_kafka",
     [
-        ("mock_webhook_run_message", {"environment": "production"}, settings.KAFKA_RUNS_TOPIC),
+        (
+            "mock_webhook_run_message",
+            {"environment": "production"},
+            settings.KAFKA_RUNS_TOPIC,
+        ),
     ],
     indirect=True,
 )
@@ -230,12 +250,12 @@ def test_stream_without_environment_filter(
     mock_requests: None, mock_kafka: None, mock_timestamp: None
 ) -> None:
     Timer(0.01, terminate_consumer).start()
-    
+
     # No agent environments set (empty list)
     with mock.patch.object(settings, "AGENT_ENVIRONMENTS", []):
         with mock.patch.object(consumer_logger, "error") as mock_error:
             streamer = KafkaStreamer(Consumer())
             streamer.stream()
-            
+
             # Should process message normally when no environment filter is set
             mock_error.assert_not_called()

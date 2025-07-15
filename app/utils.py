@@ -45,7 +45,7 @@ def sign_sha_256(input: str, secret: str, timestamp: str) -> str:
     new_hmac = hmac.new(bytes(secret, "utf-8"), digestmod=hashlib.sha256)
     new_hmac.update(bytes(to_sign, "utf-8"))
     signed = base64.b64encode(new_hmac.digest()).decode("utf-8")
-    return f"v1,{signed}"
+    return f"v1, {signed}"
 
 
 def decrypt_field(encrypted_value: str, key: str) -> str:
