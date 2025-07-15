@@ -1,5 +1,6 @@
 import json
 import os
+from copy import deepcopy
 from signal import SIGINT
 from typing import Any, Callable, Generator, Optional
 
@@ -170,18 +171,22 @@ def mock_webhook_run_message() -> Callable[[dict], bytes]:
     }
 
     def get_run_message(invocation_method: dict) -> bytes:
+        # Deep copy to avoid mutating the original fixture data
+        message_copy = deepcopy(run_message)
         if invocation_method is not None:
-            run_message["payload"]["action"]["invocationMethod"] = invocation_method
+            # Merge the provided invocation_method with the existing one
+            # to preserve default fields like "agent": True
+            message_copy["payload"]["action"]["invocationMethod"].update(invocation_method)
             # When mutating the payload, we need to ensure that the
             # headers are also updated
-            timestamp = run_message["headers"]["X-Port-Timestamp"]
-            run_message["headers"] = {}
-            run_message["headers"]["X-Port-Signature"] = sign_sha_256(
-                json.dumps(run_message, separators=(",", ":")),
+            timestamp = message_copy["headers"]["X-Port-Timestamp"]
+            message_copy["headers"] = {}
+            message_copy["headers"]["X-Port-Signature"] = sign_sha_256(
+                json.dumps(message_copy, separators=(",", ":")),
                 "test",
                 str(timestamp),
             )
-            run_message["headers"]["X-Port-Timestamp"] = timestamp
-        return json.dumps(run_message).encode()
+            message_copy["headers"]["X-Port-Timestamp"] = timestamp
+        return json.dumps(message_copy).encode()
 
     return get_run_message

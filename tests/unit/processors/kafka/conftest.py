@@ -1,5 +1,6 @@
 import json
 import os
+from copy import deepcopy
 from signal import SIGINT
 from typing import Any, Callable, Generator, Optional
 
@@ -154,9 +155,13 @@ def mock_webhook_change_log_message() -> Callable[[dict], bytes]:
     }
 
     def get_change_log_message(invocation_method: dict) -> bytes:
+        # Deep copy to avoid mutating the original fixture data
+        message_copy = deepcopy(change_log_message)
         if invocation_method is not None:
-            change_log_message["changelogDestination"] = invocation_method
-        return json.dumps(change_log_message).encode()
+            # Merge the provided invocation_method with the existing one
+            # to preserve default fields like "agent": True
+            message_copy["changelogDestination"].update(invocation_method)
+        return json.dumps(message_copy).encode()
 
     return get_change_log_message
 
@@ -218,21 +223,25 @@ def webhook_run_payload() -> dict:
 @pytest.fixture(scope="module")
 def mock_webhook_run_message(webhook_run_payload: dict) -> Callable[[dict], bytes]:
     def get_run_message(invocation_method: dict) -> bytes:
+        # Deep copy to avoid mutating the original fixture data
+        payload_copy = deepcopy(webhook_run_payload)
         if invocation_method is not None:
-            webhook_run_payload["payload"]["action"][
-                "invocationMethod"
-            ] = invocation_method
+            # Merge the provided invocation_method with the existing one
+            # to preserve default fields like "agent": True
+            payload_copy["payload"]["action"]["invocationMethod"].update(
+                invocation_method
+            )
             # When mutating the payload, we need to ensure that the
             # headers are also updated
-            timestamp = webhook_run_payload["headers"]["X-Port-Timestamp"]
-            webhook_run_payload["headers"] = {}
-            webhook_run_payload["headers"]["X-Port-Signature"] = sign_sha_256(
-                json.dumps(webhook_run_payload, separators=(",", ":")),
+            timestamp = payload_copy["headers"]["X-Port-Timestamp"]
+            payload_copy["headers"] = {}
+            payload_copy["headers"]["X-Port-Signature"] = sign_sha_256(
+                json.dumps(payload_copy, separators=(",", ":")),
                 "test",
                 str(timestamp),
             )
-            webhook_run_payload["headers"]["X-Port-Timestamp"] = timestamp
-        return json.dumps(webhook_run_payload).encode()
+            payload_copy["headers"]["X-Port-Timestamp"] = timestamp
+        return json.dumps(payload_copy).encode()
 
     return get_run_message
 
