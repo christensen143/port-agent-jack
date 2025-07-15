@@ -69,14 +69,31 @@ class Settings(BaseSettings):
 
     @validator("AGENT_ENVIRONMENTS", pre=True)
     def parse_environments(cls, v: Any) -> list[str]:
+        if v is None:
+            return []
         if isinstance(v, str):
+            # Handle empty string
+            if not v:
+                return []
+            # Parse comma-separated string
             return [e.strip() for e in v.split(",") if e.strip()]
-        return v or []
+        if isinstance(v, list):
+            return v
+        # If it's any other type, return empty list
+        return []
 
     class Config:
         case_sensitive = True
         env_file = find_dotenv()
         env_file_encoding = "utf-8"
+        
+        @classmethod
+        def parse_env_var(cls, field_name: str, raw_val: str) -> Any:
+            # Handle AGENT_ENVIRONMENTS as a plain string, not JSON
+            if field_name == "AGENT_ENVIRONMENTS":
+                return raw_val
+            # For all other fields, use default parsing
+            return cls.json_loads(raw_val)  # type: ignore
 
     WEBHOOK_INVOKER_TIMEOUT: float = 30
 
