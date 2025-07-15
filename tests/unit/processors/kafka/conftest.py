@@ -161,7 +161,9 @@ def mock_webhook_change_log_message() -> Callable[[dict], bytes]:
             # Merge the provided invocation_method with the existing one
             # to preserve default fields like "agent": True
             message_copy["changelogDestination"].update(invocation_method)
-        return json.dumps(message_copy).encode()
+        return json.dumps(
+            message_copy, separators=(",", ":"), ensure_ascii=False
+        ).encode()
 
     return get_change_log_message
 
@@ -236,12 +238,14 @@ def mock_webhook_run_message(webhook_run_payload: dict) -> Callable[[dict], byte
             timestamp = payload_copy["headers"]["X-Port-Timestamp"]
             payload_copy["headers"] = {}
             payload_copy["headers"]["X-Port-Signature"] = sign_sha_256(
-                json.dumps(payload_copy, separators=(",", ":")),
+                json.dumps(payload_copy, separators=(",", ":"), ensure_ascii=False),
                 "test",
                 str(timestamp),
             )
             payload_copy["headers"]["X-Port-Timestamp"] = timestamp
-        return json.dumps(payload_copy).encode()
+        return json.dumps(
+            payload_copy, separators=(",", ":"), ensure_ascii=False
+        ).encode()
 
     return get_run_message
 

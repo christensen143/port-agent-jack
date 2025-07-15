@@ -184,11 +184,13 @@ def mock_webhook_run_message() -> Callable[[dict], bytes]:
             timestamp = message_copy["headers"]["X-Port-Timestamp"]
             message_copy["headers"] = {}
             message_copy["headers"]["X-Port-Signature"] = sign_sha_256(
-                json.dumps(message_copy, separators=(",", ":")),
+                json.dumps(message_copy, separators=(",", ":"), ensure_ascii=False),
                 "test",
                 str(timestamp),
             )
             message_copy["headers"]["X-Port-Timestamp"] = timestamp
-        return json.dumps(message_copy).encode()
+        return json.dumps(
+            message_copy, separators=(",", ":"), ensure_ascii=False
+        ).encode()
 
     return get_run_message
