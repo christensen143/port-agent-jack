@@ -170,13 +170,15 @@ def mock_webhook_run_message() -> Callable[[dict], bytes]:
         },
     }
 
-    def get_run_message(invocation_method: dict) -> bytes:
+    def get_run_message(invocation_method: Optional[dict]) -> bytes:
         # Deep copy to avoid mutating the original fixture data
         message_copy = deepcopy(run_message)
         if invocation_method is not None:
             # Merge the provided invocation_method with the existing one
             # to preserve default fields like "agent": True
-            message_copy["payload"]["action"]["invocationMethod"].update(invocation_method)
+            message_copy["payload"]["action"]["invocationMethod"].update(
+                invocation_method
+            )
             # When mutating the payload, we need to ensure that the
             # headers are also updated
             timestamp = message_copy["headers"]["X-Port-Timestamp"]

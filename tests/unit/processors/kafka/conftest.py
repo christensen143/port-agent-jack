@@ -154,7 +154,7 @@ def mock_webhook_change_log_message() -> Callable[[dict], bytes]:
         },
     }
 
-    def get_change_log_message(invocation_method: dict) -> bytes:
+    def get_change_log_message(invocation_method: Optional[dict]) -> bytes:
         # Deep copy to avoid mutating the original fixture data
         message_copy = deepcopy(change_log_message)
         if invocation_method is not None:
@@ -222,7 +222,7 @@ def webhook_run_payload() -> dict:
 
 @pytest.fixture(scope="module")
 def mock_webhook_run_message(webhook_run_payload: dict) -> Callable[[dict], bytes]:
-    def get_run_message(invocation_method: dict) -> bytes:
+    def get_run_message(invocation_method: Optional[dict]) -> bytes:
         # Deep copy to avoid mutating the original fixture data
         payload_copy = deepcopy(webhook_run_payload)
         if invocation_method is not None:
