@@ -297,9 +297,22 @@ class WebhookInvoker(BaseInvoker):
         run_logger("Port agent finished processing the action run")
 
     def validate_incoming_signature(
-        self, msg: dict, invocation_method_name: str
+        self, msg: dict, invocation_method_name: str, invocation_method: dict = None
     ) -> bool:
         if "changelogDestination" in msg:
+            return True
+
+        # Check if this is a pre-processed webhook from Port
+        # In this case, Port has already done all the processing and we just forward it
+        if (
+            invocation_method
+            and invocation_method.get("body") is not None
+            and invocation_method.get("headers") is not None
+        ):
+            logger.info(
+                "WebhookInvoker - Detected pre-processed webhook from Port, "
+                "skipping signature verification"
+            )
             return True
 
         port_signature = msg.get("headers", {}).get("X-Port-Signature")
@@ -312,22 +325,36 @@ class WebhookInvoker(BaseInvoker):
             )
             return False
 
+        # Create a copy to avoid modifying the original message
+        msg_copy = json.loads(json.dumps(msg))
+
         # Remove Port's generated headers to avoid them being
         # used in the signature verification
         if invocation_method_name == "GITLAB":
-            del msg["headers"]
+            del msg_copy["headers"]
         else:
-            del msg["headers"]["X-Port-Signature"]
-            del msg["headers"]["X-Port-Timestamp"]
+            del msg_copy["headers"]["X-Port-Signature"]
+            del msg_copy["headers"]["X-Port-Timestamp"]
 
+        msg_for_signature = json.dumps(
+            msg_copy, separators=(",", ":"), ensure_ascii=False
+        )
         expected_sig = sign_sha_256(
-            json.dumps(msg, separators=(",", ":"), ensure_ascii=False),
+            msg_for_signature,
             settings.PORT_CLIENT_SECRET,
             port_timestamp,
         )
         if expected_sig != port_signature:
             logger.warning(
-                "WebhookInvoker - Could not verify signature, skipping the event"
+                "WebhookInvoker - Could not verify signature, skipping the event. "
+                "Expected: %s, Got: %s, Message length: %d",
+                expected_sig,
+                port_signature,
+                len(msg_for_signature),
+            )
+            # Log first 500 chars of the message being signed for debugging
+            logger.debug(
+                "Message being signed (first 500 chars): %s", msg_for_signature[:500]
             )
             return False
         return True
@@ -337,7 +364,9 @@ class WebhookInvoker(BaseInvoker):
         run_id = msg["context"].get("runId")
 
         invocation_method_name = invocation_method.get("type", "WEBHOOK")
-        if not self.validate_incoming_signature(msg, invocation_method_name):
+        if not self.validate_incoming_signature(
+            msg, invocation_method_name, invocation_method
+        ):
             return
 
         logger.info("WebhookInvoker - validating signature")
